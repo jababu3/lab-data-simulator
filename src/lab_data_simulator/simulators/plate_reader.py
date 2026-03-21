@@ -113,6 +113,50 @@ class PlateReader(Instrument):
             noise_std = params.get('noise_std', 50)
             signals   = np.random.normal(baseline, noise_std, size=len(well_ids))
 
+        elif mode == 'picklist_driven':
+            picklist = params.get('picklist')  # pd.DataFrame from Echo
+            ground_truth = params.get('ground_truth', {}) # dict: cpd_id -> {'a':X, 'b':X, 'c':X, 'd':X, 'noise':X}
+            assay_volume_nl = params.get('assay_volume_nl', 50000.0) # default 50 uL
+            baseline = params.get('baseline', 100)
+            
+            # Map wells to concentration and compound
+            # Note: handle cases where a well might have multiple transfers (we'll just take the aggregate or first but usually dose-response is 1 transfer per well)
+            well_to_signal = {}
+            if picklist is not None and not picklist.empty:
+                # Group by destination well just in case there are multiple drops
+                # But typically our dose response generator makes 1 row per dest well.
+                for _, row in picklist.iterrows():
+                    dest_well = row.get('Destination Well')
+                    if not dest_well or row.get('Transfer Status', 'Success') != 'Success':
+                        continue
+                    
+                    cpd_id = row.get('Compound ID')
+                    src_conc_um = float(row.get('Source Concentration (µM)', 0))
+                    actual_vol_nl = float(row.get('Actual Volume (nL)', 0))
+                    
+                    # Final concentration in well
+                    final_conc_um = (src_conc_um * actual_vol_nl) / assay_volume_nl
+                    
+                    gt = ground_truth.get(cpd_id)
+                    if gt:
+                        # calculate theoretical signal
+                        signal = four_parameter_logistic(
+                            final_conc_um, gt['a'], gt['b'], gt['c'], gt['d']
+                        )
+                        noise = np.random.normal(0, gt.get('noise', 100))
+                        well_to_signal[dest_well] = float(signal + noise)
+
+            signals = []
+            for wid in well_ids:
+                if wid in well_to_signal:
+                    signals.append(max(0, well_to_signal[wid]))
+                else:
+                    # Empty well or no successful transfer -> baseline
+                    noise = np.random.normal(0, params.get('baseline_noise', 10))
+                    signals.append(max(0, baseline + noise))
+                    
+            signals = np.array(signals)
+
         else:
             signals = np.zeros(len(well_ids))
 

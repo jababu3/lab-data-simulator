@@ -59,16 +59,37 @@ def run_demo():
     out_path = os.path.join(out_dir, 'echo_transfer_log.csv')
     picklist.to_csv(out_path, index=False)
     print(f"\nSaved picklist to: {os.path.abspath(out_path)}")
+
+    # 1.5 Generate Ground Truth Mapping
+    print("\n[1.5] Generating Ground Truth 'Answer Key'...")
+    ground_truth = {
+        'CMP-00001': {'a': 100, 'b': 1.2, 'c': 0.5, 'd': 50000, 'noise': 1500},  # Potent (IC50 = 0.5 uM)
+        'CMP-00002': {'a': 100, 'b': 0.8, 'c': 5.0, 'd': 50000, 'noise': 1000},  # Moderate (IC50 = 5.0 uM)
+        'CMP-00003': {'a': 100, 'b': 1.0, 'c': 20.0, 'd': 50000, 'noise': 1200}, # Weak (IC50 = 20.0 uM)
+        'CMP-00004': {'a': 100, 'b': 1.5, 'c': 0.05, 'd': 50000, 'noise': 2000}, # Very Potent (IC50 = 0.05 uM)
+        'DMSO-CTL':  {'a': 50000, 'b': 1.0, 'c': 1.0, 'd': 50000, 'noise': 800}, # Flat max signal control
+    }
     
-    # 2. Simulate Plate Read (e.g. Dose Response)
-    print("\n[2] Simulating PheraSTAR Read (4PL Curve)...")
+    gt_df = pd.DataFrame.from_dict(ground_truth, orient='index')
+    gt_df.index.name = 'Compound ID'
+    gt_df.reset_index(inplace=True)
+    gt_path = os.path.join(out_dir, 'ground_truth.csv')
+    gt_df.to_csv(gt_path, index=False)
+    print("Generated Ground Truth Mapping:")
+    print(gt_df.to_string(index=False))
+    print(f"Saved ground truth parameters to: {os.path.abspath(gt_path)}")
+    
+    # 2. Simulate Plate Read using Echo Picklist and Ground Truth
+    print("\n[2] Simulating PheraSTAR Read (Picklist-Driven)...")
     reader = PheraSTAR()   # defaults to 384-well
     read_instructions = {
-        'mode': '4PL_dilution',
+        'mode': 'picklist_driven',
         'params': {
-            'start_conc': 100,  # uM
-            'dilution_factor': 2,
-            'curve_params': {'a': 100, 'b': 1.0, 'c': 5.0, 'd': 50000}
+            'picklist': picklist,
+            'ground_truth': ground_truth,
+            'assay_volume_nl': 50000.0, # 50 uL final assay volume
+            'baseline': 100,
+            'baseline_noise': 20
         }
     }
     result_df = reader.run_simulation(read_instructions)
