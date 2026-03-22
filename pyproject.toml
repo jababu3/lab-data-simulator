@@ -2,7 +2,7 @@
 name = "lab_data_simulator"
 version = "0.1.0"
 description = "A library for simulating laboratory data (Plate Readers, Liquid Handlers, etc.)"
-authors = ["James <james@example.com>"]
+authors = ["James Bullis <jamesbullis@gmail.com>"]
 readme = "README.md"
 packages = [{ include = "lab_data_simulator", from = "src" }]
 

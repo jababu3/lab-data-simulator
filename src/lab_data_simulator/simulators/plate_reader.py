@@ -352,3 +352,69 @@ class Envision(PlateReader):
 
     def __init__(self, name: str = 'Envision', plate_format: int = 384):
         super().__init__(name, plate_format)
+
+    def to_report(
+        self,
+        df: pd.DataFrame,
+        *,
+        include_header: bool = True,
+        protocol_name: str   = 'Unnamed Protocol',
+        assay_name: str      = 'Unnamed Assay',
+        plate_id: str        = 'PLATE_001',
+        operator: str        = 'Operator',
+        target_temp_c: float = 25.0,
+        measurement_mode: Optional[str] = None,
+        excitation_nm: Optional[str]    = None,
+        emission_nm: Optional[str]      = None,
+        gain: Optional[str]             = None,
+        n_flashes: Optional[str]        = None,
+        output_path: Optional[str]      = None,
+    ) -> str:
+        """
+        Generate a PerkinElmer Envision style format.
+        
+        The report contains:
+          1. Plate information header
+          2. Results data block (plate grid layout) mapped as comma-separated values.
+        """
+        now = datetime.now()
+        block = self.to_block_format(df)
+        lines: List[str] = []
+
+        if include_header:
+            lines += [
+                "Plate information",
+                f"Barcode,{plate_id}",
+                f"Measurement date,{now.strftime('%m/%d/%Y %I:%M:%S %p')}",
+                f"User,{operator}",
+                f"Protocol,{protocol_name}",
+                f"Assay,{assay_name}",
+                f"Measurement Mode,{measurement_mode or self.DETECTION_MODE}",
+                f"Excitation,{excitation_nm or self.EXCITATION_NM}",
+                f"Emission,{emission_nm or self.EMISSION_NM}",
+                f"Gain,{gain or self.GAIN}",
+                f"Flashes,{n_flashes or self.NUMBER_OF_FLASHES}",
+                f"Target Temp,{target_temp_c:.1f}",
+                ""
+            ]
+
+        lines.append("Results")
+        
+        # Build column header row: blank label cell + column numbers
+        col_nums = [str(c) for c in block.columns]
+        header_row = ',' + ','.join(col_nums)
+        lines.append(header_row)
+
+        for row_label, row_data in block.iterrows():
+            vals = ','.join(f'{v:.2f}' for v in row_data)
+            lines.append(f'{row_label},{vals}')
+
+        lines.append('')   # trailing newline
+
+        report = '\n'.join(lines)
+
+        if output_path:
+            with open(output_path, 'w', encoding='utf-8') as fh:
+                fh.write(report)
+
+        return report

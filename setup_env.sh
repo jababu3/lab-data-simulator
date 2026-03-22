@@ -9,6 +9,9 @@ if ! command -v poetry &> /dev/null; then
     exit 1
 fi
 
+# Configure Poetry to create virtual environments in the project folder
+poetry config virtualenvs.in-project true --local
+
 # Install dependencies
 echo "Installing dependencies..."
 poetry install
