@@ -1,10 +1,13 @@
-from lab_data_simulator.simulators.plate_reader import PlateReader, PheraSTAR
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
+from lab_data_simulator.simulators.plate_reader import PlateReader, PheraSTAR, Envision
 from lab_data_simulator.simulators.liquid_handler import Echo
 from lab_data_simulator.simulators.compound_reg import SDFGenerator
 from lab_data_simulator.simulators.analytics.spr import SPRSimulator
 from lab_data_simulator.simulators.analytics.purity import PuritySimulator
 import pandas as pd
-import os
 
 def run_demo():
     print("=== Lab Data Simulator Demo ===")
@@ -106,6 +109,14 @@ def run_demo():
     raw_path = os.path.join(out_dir, 'pherastar_raw_data.txt')
     reader.to_report(result_df, include_header=False, output_path=raw_path)
     print(f"Saved PHERAstar report without headers to: {os.path.abspath(raw_path)}")
+    
+    # 2.5 Simulate Plate Read using Envision
+    print("\n[2.5] Simulating Envision Read (Picklist-Driven)...")
+    envision = Envision()
+    env_result_df = envision.run_simulation(read_instructions)
+    env_report_path = os.path.join(out_dir, 'envision_readout.csv')
+    envision.to_report(env_result_df, protocol_name='Demo Dose Response', output_path=env_report_path)
+    print(f"Saved Envision report to: {os.path.abspath(env_report_path)}")
     
     # 3. Simulate Compound Registration
     print("\n[3] Simulating Compound Registration (SDF)...")

@@ -129,6 +129,11 @@ class Echo(LiquidHandler):
         failure_rate = float(instructions.get('failure_rate', 0.05))
         volume_cv    = float(instructions.get('volume_cv', 0.03))
 
+        if not 0.0 <= failure_rate <= 1.0:
+            raise ValueError(f"failure_rate must be between 0.0 and 1.0, got {failure_rate}")
+        if volume_cv < 0.0:
+            raise ValueError(f"volume_cv must be non-negative, got {volume_cv}")
+
         rows = []
         for t in transfers:
             req_vol = float(t.get('volume', 100))
@@ -214,6 +219,9 @@ class Echo(LiquidHandler):
         pd.DataFrame
         """
         if seed is not None:
+            # Note: providing a seed here overrides the seed passed to __init__.
+            # Use the constructor seed for a fully reproducible instance;
+            # use this parameter only when you need a one-off override.
             self._rng = np.random.default_rng(seed)
 
         # Pre-compute destination wells (row-major across a 384-well plate)

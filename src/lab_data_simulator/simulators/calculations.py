@@ -22,7 +22,7 @@ def four_parameter_logistic(x: Numeric, a: float, b: float, c: float, d: float) 
         Predicted response y.
     """
     x = np.asarray(x)
-    return d + (a - d) / (1 +np.power((x / c), b))
+    return d + (a - d) / (1 + np.power((x / c), b))
 
 def percent_inhibition(high_control: Numeric, low_control: Numeric, sample: Numeric) -> Union[float, np.ndarray]:
     """
@@ -33,7 +33,7 @@ def percent_inhibition(high_control: Numeric, low_control: Numeric, sample: Nume
     sample = np.asarray(sample)
     
     denominator = hc - lc
-    if denominator == 0:
+    if np.isclose(denominator, 0):
         return np.full_like(sample, np.nan)
         
     return 100 * (1 - (sample - lc) / denominator)
@@ -47,37 +47,41 @@ def fit_4pl_curve(xdata: Numeric, ydata: Numeric) -> Dict[str, float]:
     """
     x = np.asarray(xdata)
     y = np.asarray(ydata)
-    
-    # Initial guesses
-    # a (min), b (slope), c (inflection), d (max)
+
+    _nan_result = {
+        "bottom": np.nan,
+        "hill_slope": np.nan,
+        "ic50": np.nan,
+        "top": np.nan,
+        "r_squared": 0.0,
+    }
+
+    if len(x) == 0 or len(y) == 0:
+        return _nan_result
+
+    # Initial guesses: a (min), b (slope), c (inflection), d (max)
     min_y = np.min(y)
     max_y = np.max(y)
-    mid_x = np.median(x) if len(x) > 0 else 1.0
-    
+    mid_x = float(np.median(x))
+
     p0 = [min_y, 1.0, mid_x, max_y]
-    
+
     try:
         popt, _ = curve_fit(four_parameter_logistic, x, y, p0=p0, maxfev=10000)
         a, b, c, d = popt
-        
-        # Calculate R2
+
+        # Calculate R²
         residuals = y - four_parameter_logistic(x, *popt)
-        ss_res = np.sum(residuals**2)
-        ss_tot = np.sum((y - np.mean(y))**2)
-        r2 = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0
-        
+        ss_res = np.sum(residuals ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r2 = 1 - (ss_res / ss_tot) if not np.isclose(ss_tot, 0) else 0.0
+
         return {
             "bottom": float(a),
             "hill_slope": float(b),
             "ic50": float(c),
             "top": float(d),
-            "r_squared": float(r2)
+            "r_squared": float(r2),
         }
-    except RuntimeError:
-        return {
-            "bottom": np.nan,
-            "hill_slope": np.nan,
-            "ic50": np.nan,
-            "top": np.nan,
-            "r_squared": 0.0
-        }
+    except (RuntimeError, ValueError):
+        return _nan_result

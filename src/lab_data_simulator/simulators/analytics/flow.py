@@ -1,34 +1,52 @@
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from ...core import Instrument
+
 
 class FlowCytometrySimulator(Instrument):
     """
-    Simulates Flow Cytometry results (e.g., BD FACS).
+    Simulates Flow Cytometry results (e.g., BD FACSymphony).
+
+    Generates population-level statistics including cell count, percent
+    positive, and mean fluorescence intensity (MFI) for a list of samples.
+
+    Args:
+        name: Instrument name.
+        seed: Optional random seed for reproducibility.
     """
-    def __init__(self, name: str = "BD FACSymphony"):
+
+    def __init__(self, name: str = "BD FACSymphony", seed: Optional[int] = None):
         super().__init__(name)
-        
+        self._rng = np.random.default_rng(seed)
+
     def run_simulation(self, instructions: Dict[str, Any]) -> pd.DataFrame:
         """
-        Generate population statistics (e.g. % Positive, MFI).
+        Generate population statistics (% Positive, MFI, Count).
+
+        Args:
+            instructions: Dict with key 'samples' (list of sample ID strings).
+
+        Returns:
+            DataFrame with columns: Sample ID, Population, Count, % Parent,
+            MFI.
         """
         samples = instructions.get('samples', [])
         results = []
-        
+
         for s in samples:
-            # Simulate percentage of cells positive for a marker
-            percent_pos = np.random.uniform(0, 100)
-            mfi = np.random.lognormal(mean=8, sigma=1) # Mean Fluorescence Intensity
-            count = int(np.random.normal(10000, 500))
-            
+            percent_pos = self._rng.uniform(0, 100)
+            # Lognormal distribution is realistic for fluorescence intensity
+            mfi = self._rng.lognormal(mean=8, sigma=1)
+            # Clamp to zero — normal distribution can produce negatives
+            count = max(0, int(self._rng.normal(10000, 500)))
+
             results.append({
-                'Sample ID': s,
+                'Sample ID':  s,
                 'Population': 'Lymphocytes/CD3+/CD4+',
-                'Count': count,
-                '% Parent': f"{percent_pos:.1f}",
-                'MFI': f"{mfi:.0f}"
+                'Count':      count,
+                '% Parent':   f"{percent_pos:.1f}",
+                'MFI':        f"{mfi:.0f}",
             })
-            
+
         return pd.DataFrame(results)

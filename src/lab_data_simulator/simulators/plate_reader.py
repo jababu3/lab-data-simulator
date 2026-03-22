@@ -34,7 +34,8 @@ class PlateReader(Instrument):
     SHAKING_MODE        = 'None'
 
     def __init__(self, name: str, plate_format: int = 384,
-                 config: Optional[Dict[str, Any]] = None):
+                 config: Optional[Dict[str, Any]] = None,
+                 seed: Optional[int] = None):
         super().__init__(name, config)
         if plate_format not in self.PLATE_FORMATS:
             raise ValueError(
@@ -43,6 +44,7 @@ class PlateReader(Instrument):
             )
         self.plate_format = plate_format
         self.rows, self.cols = self.PLATE_FORMATS[plate_format]
+        self._rng = np.random.default_rng(seed)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -106,23 +108,28 @@ class PlateReader(Instrument):
                 curve_params['c'], curve_params['d'],
             )
             noise_std = params.get('noise_std', 0.05 * float(np.max(signals)))
-            signals   = signals + np.random.normal(0, noise_std, size=len(signals))
+            signals   = signals + self._rng.normal(0, noise_std, size=len(signals))
 
         elif mode == 'flat':
             baseline  = params.get('baseline', 1000)
             noise_std = params.get('noise_std', 50)
-            signals   = np.random.normal(baseline, noise_std, size=len(well_ids))
+            signals   = self._rng.normal(baseline, noise_std, size=len(well_ids))
 
         elif mode == 'picklist_driven':
             picklist = params.get('picklist')  # pd.DataFrame from Echo
             ground_truth = params.get('ground_truth', {}) # dict: cpd_id -> {'a':X, 'b':X, 'c':X, 'd':X, 'noise':X}
-            assay_volume_nl = params.get('assay_volume_nl', 50000.0) # default 50 uL
+            assay_volume_nl = params.get('assay_volume_nl', 50000.0) # default 50 uL total well volume
             baseline = params.get('baseline', 100)
-            
+
             # Map wells to concentration and compound
             # Note: handle cases where a well might have multiple transfers (we'll just take the aggregate or first but usually dose-response is 1 transfer per well)
             well_to_signal = {}
             if picklist is not None and not picklist.empty:
+                required_cols = {'Destination Well', 'Compound ID',
+                                 'Source Concentration (µM)', 'Actual Volume (nL)', 'Transfer Status'}
+                missing = required_cols - set(picklist.columns)
+                if missing:
+                    raise ValueError(f"Picklist is missing required columns: {missing}")
                 # Group by destination well just in case there are multiple drops
                 # But typically our dose response generator makes 1 row per dest well.
                 for _, row in picklist.iterrows():
@@ -143,7 +150,7 @@ class PlateReader(Instrument):
                         signal = four_parameter_logistic(
                             final_conc_um, gt['a'], gt['b'], gt['c'], gt['d']
                         )
-                        noise = np.random.normal(0, gt.get('noise', 100))
+                        noise = self._rng.normal(0, gt.get('noise', 100))
                         well_to_signal[dest_well] = float(signal + noise)
 
             signals = []
@@ -152,7 +159,7 @@ class PlateReader(Instrument):
                     signals.append(max(0, well_to_signal[wid]))
                 else:
                     # Empty well or no successful transfer -> baseline
-                    noise = np.random.normal(0, params.get('baseline_noise', 10))
+                    noise = self._rng.normal(0, params.get('baseline_noise', 10))
                     signals.append(max(0, baseline + noise))
                     
             signals = np.array(signals)
@@ -329,8 +336,9 @@ class PheraSTAR(PlateReader):
     SHAKING_DURATION_S = 5
     SHAKING_MODE       = 'Double orbital'
 
-    def __init__(self, name: str = 'PHERAstar FSX', plate_format: int = 384):
-        super().__init__(name, plate_format)
+    def __init__(self, name: str = 'PHERAstar FSX', plate_format: int = 384,
+                 seed: Optional[int] = None):
+        super().__init__(name, plate_format, seed=seed)
 
 
 # ---------------------------------------------------------------------------
@@ -350,8 +358,9 @@ class Envision(PlateReader):
     GAIN              = '100'
     NUMBER_OF_FLASHES = '50'
 
-    def __init__(self, name: str = 'Envision', plate_format: int = 384):
-        super().__init__(name, plate_format)
+    def __init__(self, name: str = 'Envision', plate_format: int = 384,
+                 seed: Optional[int] = None):
+        super().__init__(name, plate_format, seed=seed)
 
     def to_report(
         self,
