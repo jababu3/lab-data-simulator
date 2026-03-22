@@ -170,6 +170,10 @@ poetry run pytest --cov=lab_data_simulator  # with coverage
 
 This library pairs with [lab-informatics](https://github.com/jababu3/lab-informatics) — a simulated lab informatics environment (LIMS + data infrastructure) you can run locally. Together they give you a complete end-to-end lab data workflow to explore.
 
+## Disclaimer
+
+This project is not affiliated with, endorsed by, or connected to BMG Labtech, Revvity, Cytiva, Beckman Coulter, Molecular Devices, BD Biosciences, PerkinElmer, or any other instrument manufacturer. Instrument and software names are used solely to identify the output formats being simulated and to provide realistic context for educational purposes.
+
 ## License
 
 MIT — see [LICENSE](LICENSE) for details.

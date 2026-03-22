@@ -1,14 +1,14 @@
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, List, Optional
+from typing import Any, Optional
 from ..core import Instrument
 
 # ---------------------------------------------------------------------------
 # Echo acoustic dispensing constants
 # ---------------------------------------------------------------------------
-ECHO_MIN_VOL_NL = 25       # Minimum dispense volume (nL)
-ECHO_MAX_VOL_NL = 10_000   # Maximum dispense volume (nL)
-ECHO_DROPLET_NL = 2.5      # Droplet size – all volumes must be multiples of 2.5 nL
+ECHO_MIN_VOL_NL = 25  # Minimum dispense volume (nL)
+ECHO_MAX_VOL_NL = 10_000  # Maximum dispense volume (nL)
+ECHO_DROPLET_NL = 2.5  # Droplet size – all volumes must be multiples of 2.5 nL
 
 
 def _round_to_droplet(volume_nl: float) -> float:
@@ -20,16 +20,17 @@ def _round_to_droplet(volume_nl: float) -> float:
 # Base LiquidHandler
 # ---------------------------------------------------------------------------
 
+
 class LiquidHandler(Instrument):
     """
     Simulates a Liquid Handler (e.g., Echo, Hamilton, Tecan).
     Generates transfer logs (picklists) based on instructions.
     """
 
-    def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, config: Optional[dict[str, Any]] = None):
         super().__init__(name, config)
 
-    def run_simulation(self, instructions: Dict[str, Any]) -> pd.DataFrame:
+    def run_simulation(self, instructions: dict[str, Any]) -> pd.DataFrame:
         """
         Simulate a liquid transfer process.
 
@@ -44,20 +45,22 @@ class LiquidHandler(Instrument):
         Returns:
             DataFrame representing the Transfer Log / Picklist
         """
-        transfers = instructions.get('transfers', [])
-        source_plate = instructions.get('source_plate', 'Source1')
-        dest_plate = instructions.get('dest_plate', 'Dest1')
+        transfers = instructions.get("transfers", [])
+        source_plate = instructions.get("source_plate", "Source1")
+        dest_plate = instructions.get("dest_plate", "Dest1")
 
         log_data = []
         for t in transfers:
-            log_data.append({
-                'Source Plate Name': source_plate,
-                'Source Well': t.get('source_well', ''),
-                'Destination Plate Name': dest_plate,
-                'Destination Well': t.get('dest_well', ''),
-                'Transfer Volume': t.get('volume', 0),
-                'Liquid Class': t.get('liquid_class', 'Default'),
-            })
+            log_data.append(
+                {
+                    "Source Plate Name": source_plate,
+                    "Source Well": t.get("source_well", ""),
+                    "Destination Plate Name": dest_plate,
+                    "Destination Well": t.get("dest_well", ""),
+                    "Transfer Volume": t.get("volume", 0),
+                    "Liquid Class": t.get("liquid_class", "Default"),
+                }
+            )
 
         return pd.DataFrame(log_data)
 
@@ -68,10 +71,10 @@ class LiquidHandler(Instrument):
 
 # Probability weights for each failure type (success is handled separately)
 _FAILURE_TYPES = [
-    'Insufficient Fluid',
-    'Fluid Thickness Error',
-    'Well Geometry Error',
-    'No Fluid',
+    "Insufficient Fluid",
+    "Fluid Thickness Error",
+    "Well Geometry Error",
+    "No Fluid",
 ]
 
 _FAILURE_WEIGHTS = [0.50, 0.25, 0.15, 0.10]  # relative weights among failures
@@ -111,9 +114,11 @@ class Echo(LiquidHandler):
         Random seed for reproducibility.
     """
 
-    DEFAULT_LIQUID_CLASS = 'AQ_BP'   # Standard Echo liquid class for aqueous, backpressure
+    DEFAULT_LIQUID_CLASS = (
+        "AQ_BP"  # Standard Echo liquid class for aqueous, backpressure
+    )
 
-    def __init__(self, name: str = 'Echo 655', seed: Optional[int] = None):
+    def __init__(self, name: str = "Echo 655", seed: Optional[int] = None):
         super().__init__(name)
         self._rng = np.random.default_rng(seed)
 
@@ -121,53 +126,69 @@ class Echo(LiquidHandler):
     # Public API
     # ------------------------------------------------------------------
 
-    def run_simulation(self, instructions: Dict[str, Any]) -> pd.DataFrame:
+    def run_simulation(self, instructions: dict[str, Any]) -> pd.DataFrame:
         """Return a DataFrame that mirrors a real Echo survey/transfer log."""
-        source_plate = instructions.get('source_plate', 'Source[1]')
-        dest_plate   = instructions.get('dest_plate',   'Destination[1]')
-        transfers    = instructions.get('transfers', [])
-        failure_rate = float(instructions.get('failure_rate', 0.05))
-        volume_cv    = float(instructions.get('volume_cv', 0.03))
+        source_plate = instructions.get("source_plate", "Source[1]")
+        dest_plate = instructions.get("dest_plate", "Destination[1]")
+        transfers = instructions.get("transfers", [])
+        failure_rate = float(instructions.get("failure_rate", 0.05))
+        volume_cv = float(instructions.get("volume_cv", 0.03))
+        seed_override = instructions.get("seed")
 
         if not 0.0 <= failure_rate <= 1.0:
-            raise ValueError(f"failure_rate must be between 0.0 and 1.0, got {failure_rate}")
+            raise ValueError(
+                f"failure_rate must be between 0.0 and 1.0, got {failure_rate}"
+            )
         if volume_cv < 0.0:
             raise ValueError(f"volume_cv must be non-negative, got {volume_cv}")
 
+        rng = (
+            np.random.default_rng(seed_override)
+            if seed_override is not None
+            else self._rng
+        )
+
         rows = []
         for t in transfers:
-            req_vol = float(t.get('volume', 100))
+            req_vol = float(t.get("volume", 100))
             clamped = float(np.clip(req_vol, ECHO_MIN_VOL_NL, ECHO_MAX_VOL_NL))
             requested_vol = _round_to_droplet(clamped)
 
             # Determine transfer outcome
-            failed = self._rng.random() < failure_rate
+            failed = rng.random() < failure_rate
             if failed:
-                status = self._rng.choice(_FAILURE_TYPES, p=_FAILURE_WEIGHTS)
+                status = rng.choice(_FAILURE_TYPES, p=_FAILURE_WEIGHTS)
                 # Partial or zero actual transfer depending on error type
-                actual_vol = 0.0 if status in ('No Fluid', 'Well Geometry Error') \
-                             else _round_to_droplet(requested_vol * self._rng.uniform(0, 0.6))
+                actual_vol = (
+                    0.0
+                    if status in ("No Fluid", "Well Geometry Error")
+                    else _round_to_droplet(requested_vol * rng.uniform(0, 0.6))
+                )
             else:
-                status = 'Success'
+                status = "Success"
                 # Add small Gaussian noise to simulate acoustic variability
-                noise = self._rng.normal(1.0, volume_cv)
+                noise = rng.normal(1.0, volume_cv)
                 actual_vol = _round_to_droplet(
-                    float(np.clip(requested_vol * noise, ECHO_MIN_VOL_NL, ECHO_MAX_VOL_NL))
+                    float(
+                        np.clip(requested_vol * noise, ECHO_MIN_VOL_NL, ECHO_MAX_VOL_NL)
+                    )
                 )
 
-            rows.append({
-                'Source Plate Name':       source_plate,
-                'Source Well':             t.get('source_well', ''),
-                'Destination Plate Name':  dest_plate,
-                'Destination Well':        t.get('dest_well', ''),
-                'Compound ID':             t.get('compound_id', ''),
-                'Compound Name':           t.get('compound_name', ''),
-                'Source Concentration (µM)': t.get('concentration', ''),
-                'Liquid Class':            t.get('liquid_class', self.DEFAULT_LIQUID_CLASS),
-                'Requested Volume (nL)':   requested_vol,
-                'Actual Volume (nL)':      actual_vol,
-                'Transfer Status':         status,
-            })
+            rows.append(
+                {
+                    "Source Plate Name": source_plate,
+                    "Source Well": t.get("source_well", ""),
+                    "Destination Plate Name": dest_plate,
+                    "Destination Well": t.get("dest_well", ""),
+                    "Compound ID": t.get("compound_id", ""),
+                    "Compound Name": t.get("compound_name", ""),
+                    "Source Concentration (µM)": t.get("concentration", ""),
+                    "Liquid Class": t.get("liquid_class", self.DEFAULT_LIQUID_CLASS),
+                    "Requested Volume (nL)": requested_vol,
+                    "Actual Volume (nL)": actual_vol,
+                    "Transfer Status": status,
+                }
+            )
 
         df = pd.DataFrame(rows)
         return df
@@ -178,9 +199,9 @@ class Echo(LiquidHandler):
 
     def make_dose_response_picklist(
         self,
-        compounds: List[Dict[str, Any]],
-        source_plate: str = 'CPD_SRC[1]',
-        dest_plate: str = 'ASSAY_DEST[1]',
+        compounds: list[dict[str, Any]],
+        source_plate: str = "CPD_SRC[1]",
+        dest_plate: str = "ASSAY_DEST[1]",
         top_vol_nl: float = 250.0,
         dilution_factor: float = 3.0,
         n_points: int = 8,
@@ -218,42 +239,41 @@ class Echo(LiquidHandler):
         -------
         pd.DataFrame
         """
-        if seed is not None:
-            # Note: providing a seed here overrides the seed passed to __init__.
-            # Use the constructor seed for a fully reproducible instance;
-            # use this parameter only when you need a one-off override.
-            self._rng = np.random.default_rng(seed)
+        # Seed is now passed safely through instructions without changing the instance state.
 
         # Pre-compute destination wells (row-major across a 384-well plate)
         def _well(idx: int) -> str:
-            row = chr(ord('A') + (idx // 24))
+            row = chr(ord("A") + (idx // 24))
             col = (idx % 24) + 1
-            return f'{row}{col}'
+            return f"{row}{col}"
 
         transfers = []
         well_cursor = 0
 
         for cpd in compounds:
             for pt in range(n_points):
-                vol = _round_to_droplet(top_vol_nl / (dilution_factor ** pt))
+                vol = _round_to_droplet(top_vol_nl / (dilution_factor**pt))
                 vol = float(np.clip(vol, ECHO_MIN_VOL_NL, ECHO_MAX_VOL_NL))
                 for _ in range(n_replicates):
-                    transfers.append({
-                        'source_well':  cpd.get('source_well', 'A1'),
-                        'dest_well':    _well(well_cursor),
-                        'volume':       vol,
-                        'compound_id':  cpd.get('compound_id', ''),
-                        'compound_name': cpd.get('compound_name', ''),
-                        'concentration': cpd.get('concentration', ''),
-                    })
+                    transfers.append(
+                        {
+                            "source_well": cpd.get("source_well", "A1"),
+                            "dest_well": _well(well_cursor),
+                            "volume": vol,
+                            "compound_id": cpd.get("compound_id", ""),
+                            "compound_name": cpd.get("compound_name", ""),
+                            "concentration": cpd.get("concentration", ""),
+                        }
+                    )
                     well_cursor += 1
 
         instructions = {
-            'source_plate': source_plate,
-            'dest_plate':   dest_plate,
-            'transfers':    transfers,
-            'failure_rate': failure_rate,
-            'volume_cv':    volume_cv,
+            "source_plate": source_plate,
+            "dest_plate": dest_plate,
+            "transfers": transfers,
+            "failure_rate": failure_rate,
+            "volume_cv": volume_cv,
+            "seed": seed,
         }
         return self.run_simulation(instructions)
 
@@ -262,11 +282,14 @@ class Echo(LiquidHandler):
 # Hamilton & Tecan stubs
 # ---------------------------------------------------------------------------
 
+
 class Hamilton(LiquidHandler):
     """Tip-based Liquid Handler (Hamilton STAR/Vantage)."""
+
     pass
 
 
 class Tecan(LiquidHandler):
     """Tip-based Liquid Handler (Tecan Evo/Fluent)."""
+
     pass

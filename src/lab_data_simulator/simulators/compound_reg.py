@@ -1,12 +1,13 @@
-from typing import List, Dict, Any, Optional
+from typing import Any, Optional
 import random
 from ..core import Instrument
+
 
 class SDFGenerator(Instrument):
     """
     Generates SDfiles for compound registration.
     """
-    
+
     # Simple benzene template for fallback
     # Starts with header, then counts line, then atom block, bond block...
     # This is a very minimal valid molblock.
@@ -33,29 +34,29 @@ class SDFGenerator(Instrument):
     def __init__(self, name: str = "SDFGenerator"):
         super().__init__(name)
 
-    def run_simulation(self, instructions: Dict[str, Any]) -> str:
+    def run_simulation(self, instructions: dict[str, Any]) -> str:
         """
         Generate an SDFile content string.
-        
+
         Args:
             instructions:
                 - 'num_compounds': int
                 - 'prefix': str (e.g. 'CHEM')
                 - 'start_id': int (e.g. 1000)
-                
+
         Returns:
             str: Content of the .sdf file
         """
-        num_compounds = instructions.get('num_compounds', 10)
-        prefix = instructions.get('prefix', 'CHEM')
-        start_id = instructions.get('start_id', 1000)
-        
+        num_compounds = instructions.get("num_compounds", 10)
+        prefix = instructions.get("prefix", "CHEM")
+        start_id = instructions.get("start_id", 1000)
+
         sdf_content = []
-        
+
         for i in range(num_compounds):
             cid = f"{prefix}{start_id + i}"
             molblock = self.BENZENE_MOLBLOCK
-            
+
             # Generate random QSAR properties
             mw = round(random.uniform(150.0, 500.0), 2)
             logp = round(random.uniform(-1.0, 5.0), 2)
@@ -91,8 +92,8 @@ class SDFGenerator(Instrument):
                 f">  <Purity>",
                 f"{purity}",
                 "",
-                "$$$$"
+                "$$$$",
             ]
             sdf_content.append("\n".join(record))
-            
+
         return "\n".join(sdf_content)

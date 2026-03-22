@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, List, Optional
+from typing import Any, Optional
 from ...core import Instrument
 
 
@@ -21,7 +21,7 @@ class PuritySimulator(Instrument):
         super().__init__(name)
         self._rng = np.random.default_rng(seed)
 
-    def run_simulation(self, instructions: Dict[str, Any]) -> pd.DataFrame:
+    def run_simulation(self, instructions: dict[str, Any]) -> pd.DataFrame:
         """
         Generate purity results for a list of samples.
 
@@ -32,7 +32,7 @@ class PuritySimulator(Instrument):
             DataFrame with columns: Sample ID, Retention Time, Area Percent,
             Method.
         """
-        samples = instructions.get('samples', [])
+        samples = instructions.get("samples", [])
         results = []
 
         for s in samples:
@@ -40,11 +40,13 @@ class PuritySimulator(Instrument):
             purity = self._rng.beta(a=50, b=2) * 100
             purity = min(purity, 100.0)
 
-            results.append({
-                'Sample ID':      s,
-                'Retention Time': self._rng.normal(2.5, 0.1),
-                'Area Percent':   round(purity, 2),
-                'Method':         'Method A',
-            })
+            results.append(
+                {
+                    "Sample ID": s,
+                    "Retention Time": self._rng.normal(2.5, 0.1),
+                    "Area Percent": round(purity, 2),
+                    "Method": "Method A",
+                }
+            )
 
         return pd.DataFrame(results)
