@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.optimize import curve_fit
-from typing import Union, Optional, Callable
+from typing import Union
 
 # Type alias for array-like inputs (lists, numpy arrays, single floats)
 Numeric = Union[float, np.ndarray, list]

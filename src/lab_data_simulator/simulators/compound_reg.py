@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 import random
 from ..core import Instrument
 
@@ -68,28 +68,28 @@ class SDFGenerator(Instrument):
 
             record = [
                 molblock,
-                f">  <ID>",
+                ">  <ID>",
                 f"{cid}",
                 "",
-                f">  <MolecularWeight>",
+                ">  <MolecularWeight>",
                 f"{mw}",
                 "",
-                f">  <LogP>",
+                ">  <LogP>",
                 f"{logp}",
                 "",
-                f">  <TPSA>",
+                ">  <TPSA>",
                 f"{tpsa}",
                 "",
-                f">  <HBD>",
+                ">  <HBD>",
                 f"{hbd}",
                 "",
-                f">  <HBA>",
+                ">  <HBA>",
                 f"{hba}",
                 "",
-                f">  <RotatableBonds>",
+                ">  <RotatableBonds>",
                 f"{rotatable}",
                 "",
-                f">  <Purity>",
+                ">  <Purity>",
                 f"{purity}",
                 "",
                 "$$$$",
