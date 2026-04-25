@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
-[![CI](https://github.com/jababu3/lab-data-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/jababu3/lab-data-simulator/actions)
+[![CI](https://github.com/jababu3/lab-data-simulator/actions/workflows/python-app.yml/badge.svg)](https://github.com/jababu3/lab-data-simulator/actions/workflows/python-app.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 A Python library for generating realistic laboratory instrument data. Use it to explore, test, and learn about lab informatics systems without needing access to physical instruments.
