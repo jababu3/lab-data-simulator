@@ -25,6 +25,8 @@ def four_parameter_logistic(
         Predicted response y.
     """
     x = np.asarray(x)
+    if np.any(np.asarray(c) == 0):
+        raise ValueError("Inflection point 'c' (EC50/IC50) must be nonzero.")
     return d + (a - d) / (1 + np.power((x / c), b))
 
 
@@ -50,7 +52,7 @@ def fit_4pl_curve(xdata: Numeric, ydata: Numeric) -> dict[str, float]:
     Fit a 4PL curve to data and return parameters matching Lab Guide specs.
 
     Returns:
-        Dict with keys: 'bottom', 'hill_slope', 'ic50', 'top', 'r2'
+        Dict with keys: 'bottom', 'hill_slope', 'ic50', 'top', 'r_squared'
     """
     x = np.asarray(xdata)
     y = np.asarray(ydata)

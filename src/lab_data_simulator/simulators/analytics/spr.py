@@ -42,8 +42,8 @@ class SPRSimulator(Instrument):
         results = []
 
         for s in samples:
-            ka = self._rng.uniform(1e4, 1e6)  # association rate 1/Ms
-            kd = self._rng.uniform(1e-4, 1e-2)  # dissociation rate 1/s
+            ka = 10 ** self._rng.uniform(4, 6)  # association rate 1/Ms (log-uniform)
+            kd = 10 ** self._rng.uniform(-4, -2)  # dissociation rate 1/s (log-uniform)
             KD = kd / ka  # equilibrium constant M
 
             results.append(

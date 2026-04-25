@@ -1,6 +1,4 @@
-import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 from lab_data_simulator.simulators.plate_reader import PlateReader, PheraSTAR, Envision
 from lab_data_simulator.simulators.liquid_handler import Echo

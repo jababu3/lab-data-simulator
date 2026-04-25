@@ -27,5 +27,3 @@ data/
 .vscode/
 .idea/
 
-# Poetry Local Configuration
-poetry.toml

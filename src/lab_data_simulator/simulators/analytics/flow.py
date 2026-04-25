@@ -28,10 +28,11 @@ class FlowCytometrySimulator(Instrument):
             instructions: Dict with key 'samples' (list of sample ID strings).
 
         Returns:
-            DataFrame with columns: Sample ID, Population, Count, % Parent,
+            DataFrame with columns: Sample ID, Population, Count, Percent_Parent,
             MFI.
         """
         samples = instructions.get("samples", [])
+        population = instructions.get("population", "Lymphocytes/CD3+/CD4+")
         results = []
 
         for s in samples:
@@ -44,10 +45,10 @@ class FlowCytometrySimulator(Instrument):
             results.append(
                 {
                     "Sample ID": s,
-                    "Population": "Lymphocytes/CD3+/CD4+",
+                    "Population": population,
                     "Count": count,
-                    "% Parent": f"{percent_pos:.1f}",
-                    "MFI": f"{mfi:.0f}",
+                    "Percent_Parent": round(percent_pos, 1),
+                    "MFI": round(mfi, 0),
                 }
             )
 

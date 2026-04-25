@@ -6,6 +6,7 @@ from lab_data_simulator.simulators.analytics.purity import PuritySimulator
 from lab_data_simulator.simulators.analytics.spr import SPRSimulator
 from lab_data_simulator.simulators.analytics.flow import FlowCytometrySimulator
 from lab_data_simulator.simulators.analytics.hci import HCISimulator
+from lab_data_simulator.simulators.calculations import percent_inhibition
 
 
 def test_sdf_generation():
@@ -73,8 +74,11 @@ def test_flow_simulator():
     assert len(df) == 2
     assert 'MFI' in df.columns
     assert 'Count' in df.columns
-    # Cell counts must be non-negative
+    assert 'Percent_Parent' in df.columns
+    # Numeric columns must support arithmetic
     assert (df['Count'] >= 0).all()
+    assert df['MFI'].mean() > 0
+    assert (df['Percent_Parent'] >= 0).all() and (df['Percent_Parent'] <= 100).all()
 
 
 def test_flow_reproducibility():
@@ -98,3 +102,33 @@ def test_hci_reproducibility():
     df_a = HCISimulator(seed=8).run_simulation({'samples': ['A', 'B']})
     df_b = HCISimulator(seed=8).run_simulation({'samples': ['A', 'B']})
     pd.testing.assert_frame_equal(df_a, df_b)
+
+
+def test_percent_inhibition_basic():
+    high = [10000, 10000, 10000]
+    low = [100, 100, 100]
+    result = percent_inhibition(high, low, [5050])
+    assert abs(result[0] - 50.0) < 1.0
+
+
+def test_percent_inhibition_full_inhibition():
+    result = percent_inhibition([10000], [100], [100])
+    assert abs(result[0] - 100.0) < 0.01
+
+
+def test_percent_inhibition_no_inhibition():
+    result = percent_inhibition([10000], [100], [10000])
+    assert abs(result[0] - 0.0) < 0.01
+
+
+def test_percent_inhibition_zero_denominator():
+    result = percent_inhibition([5000.0], [5000.0], [5000.0])
+    assert np.isnan(result[0])
+
+
+def test_sdf_reproducibility():
+    gen_a = SDFGenerator(seed=99)
+    gen_b = SDFGenerator(seed=99)
+    content_a = gen_a.run_simulation({'num_compounds': 3, 'prefix': 'X'})
+    content_b = gen_b.run_simulation({'num_compounds': 3, 'prefix': 'X'})
+    assert content_a == content_b

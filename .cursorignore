@@ -1,0 +1,17 @@
+# Cursor file indexing exclusions — lab-data-simulator
+
+# Virtual environment (contains many large compiled .so/.dylib files)
+.venv/
+
+# Compiled artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.so
+*.dylib
+
+# Generated outputs
+output/
+
+# Dependency lock
+poetry.lock

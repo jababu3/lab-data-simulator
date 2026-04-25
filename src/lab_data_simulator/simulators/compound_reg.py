@@ -1,11 +1,14 @@
-from typing import Any
-import random
+from typing import Any, Optional
+import numpy as np
 from ..core import Instrument
 
 
 class SDFGenerator(Instrument):
     """
     Generates SDfiles for compound registration.
+
+    Note: QSAR properties (MW, LogP, TPSA, etc.) are synthetic random values,
+    not computed from molecular structure. All compounds share a benzene scaffold.
     """
 
     # Simple benzene template for fallback
@@ -31,8 +34,9 @@ class SDFGenerator(Instrument):
         "M  END"
     )
 
-    def __init__(self, name: str = "SDFGenerator"):
+    def __init__(self, name: str = "SDFGenerator", seed: Optional[int] = None):
         super().__init__(name)
+        self._rng = np.random.default_rng(seed)
 
     def run_simulation(self, instructions: dict[str, Any]) -> str:
         """
@@ -57,14 +61,14 @@ class SDFGenerator(Instrument):
             cid = f"{prefix}{start_id + i}"
             molblock = self.BENZENE_MOLBLOCK
 
-            # Generate random QSAR properties
-            mw = round(random.uniform(150.0, 500.0), 2)
-            logp = round(random.uniform(-1.0, 5.0), 2)
-            tpsa = round(random.uniform(20.0, 140.0), 1)
-            hbd = random.randint(0, 5)
-            hba = random.randint(1, 10)
-            rotatable = random.randint(1, 8)
-            purity = round(random.uniform(95.0, 99.9), 1)
+            # Generate synthetic QSAR properties (not computed from structure)
+            mw = round(self._rng.uniform(150.0, 500.0), 2)
+            logp = round(self._rng.uniform(-1.0, 5.0), 2)
+            tpsa = round(self._rng.uniform(20.0, 140.0), 1)
+            hbd = int(self._rng.integers(0, 6))
+            hba = int(self._rng.integers(1, 11))
+            rotatable = int(self._rng.integers(1, 9))
+            purity = round(self._rng.uniform(95.0, 99.9), 1)
 
             record = [
                 molblock,

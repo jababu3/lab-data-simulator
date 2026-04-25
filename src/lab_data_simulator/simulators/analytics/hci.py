@@ -32,6 +32,7 @@ class HCISimulator(Instrument):
             Mean Intensity_Nuclei, Mean Area_Nuclei.
         """
         samples = instructions.get("samples", [])
+        well_region = instructions.get("well_region", "Center")
         results = []
 
         for s in samples:
@@ -43,10 +44,10 @@ class HCISimulator(Instrument):
             results.append(
                 {
                     "Sample ID": s,
-                    "Well Region": "Center",
+                    "Well Region": well_region,
                     "Cell Count": cell_count,
-                    "Mean Intensity_Nuclei": f"{intensity:.2f}",
-                    "Mean Area_Nuclei": f"{area:.2f}",
+                    "Mean Intensity_Nuclei": round(intensity, 2),
+                    "Mean Area_Nuclei": round(area, 2),
                 }
             )
 

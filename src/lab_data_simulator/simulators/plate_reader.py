@@ -145,31 +145,24 @@ class PlateReader(Instrument):
                 missing = required_cols - set(picklist.columns)
                 if missing:
                     raise ValueError(f"Picklist is missing required columns: {missing}")
-                # Group by destination well just in case there are multiple drops
-                # But typically our dose response generator makes 1 row per dest well.
-                for _, row in picklist.iterrows():
-                    dest_well = row.get("Destination Well")
-                    if (
-                        not dest_well
-                        or row.get("Transfer Status", "Success") != "Success"
-                    ):
-                        continue
-
-                    cpd_id = row.get("Compound ID")
-                    src_conc_um = float(row.get("Source Concentration (µM)", 0))
-                    actual_vol_nl = float(row.get("Actual Volume (nL)", 0))
-
-                    # Final concentration in well
-                    final_conc_um = (src_conc_um * actual_vol_nl) / assay_volume_nl
-
+                valid = picklist[
+                    (picklist["Transfer Status"] == "Success")
+                    & (picklist["Destination Well"].astype(bool))
+                ].copy()
+                valid["final_conc_um"] = (
+                    valid["Source Concentration (µM)"].astype(float)
+                    * valid["Actual Volume (nL)"].astype(float)
+                    / assay_volume_nl
+                )
+                for _, row in valid.iterrows():
+                    cpd_id = row["Compound ID"]
                     gt = ground_truth.get(cpd_id)
                     if gt:
-                        # calculate theoretical signal
                         signal = four_parameter_logistic(
-                            final_conc_um, gt["a"], gt["b"], gt["c"], gt["d"]
+                            row["final_conc_um"], gt["a"], gt["b"], gt["c"], gt["d"]
                         )
                         noise = self._rng.normal(0, gt.get("noise", 100))
-                        well_to_signal[dest_well] = float(signal + noise)
+                        well_to_signal[row["Destination Well"]] = float(signal + noise)
 
             signals = []
             for wid in well_ids:
@@ -183,7 +176,10 @@ class PlateReader(Instrument):
             signals = np.array(signals)
 
         else:
-            signals = np.zeros(len(well_ids))
+            valid_modes = ("4PL_dilution", "flat", "picklist_driven")
+            raise ValueError(
+                f"Unknown simulation mode '{mode}'. Valid modes: {valid_modes}"
+            )
 
         return pd.DataFrame({"Well": well_ids, "Signal": signals})
 

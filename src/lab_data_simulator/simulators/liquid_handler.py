@@ -241,6 +241,14 @@ class Echo(LiquidHandler):
         """
         # Seed is now passed safely through instructions without changing the instance state.
 
+        total_transfers = len(compounds) * n_points * n_replicates
+        plate_capacity = 384
+        if total_transfers > plate_capacity:
+            raise ValueError(
+                f"Transfer count ({total_transfers}) exceeds 384-well plate capacity. "
+                f"Reduce compounds, n_points, or n_replicates."
+            )
+
         # Pre-compute destination wells (row-major across a 384-well plate)
         def _well(idx: int) -> str:
             row = chr(ord("A") + (idx // 24))
@@ -284,12 +292,14 @@ class Echo(LiquidHandler):
 
 
 class Hamilton(LiquidHandler):
-    """Tip-based Liquid Handler (Hamilton STAR/Vantage)."""
+    """Tip-based Liquid Handler (Hamilton STAR/Vantage). Not yet implemented."""
 
-    pass
+    def run_simulation(self, instructions: dict[str, Any]) -> pd.DataFrame:
+        raise NotImplementedError("Hamilton simulator is not yet implemented.")
 
 
 class Tecan(LiquidHandler):
-    """Tip-based Liquid Handler (Tecan Evo/Fluent)."""
+    """Tip-based Liquid Handler (Tecan Evo/Fluent). Not yet implemented."""
 
-    pass
+    def run_simulation(self, instructions: dict[str, Any]) -> pd.DataFrame:
+        raise NotImplementedError("Tecan simulator is not yet implemented.")

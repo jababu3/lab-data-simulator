@@ -1,0 +1,18 @@
+# Claude file indexing exclusions — lab-data-simulator
+
+# Virtual environment (contains many large compiled .so/.dylib files)
+.venv/
+
+# Poetry/package artifacts
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.so
+*.dylib
+
+# Generated outputs
+output/
+
+# Dependency lock (large, rarely useful for context)
+poetry.lock
