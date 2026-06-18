@@ -1,0 +1,34 @@
+[workspace]
+name = "lab-data-simulator"
+version = "0.1.0"
+description = "A library for simulating laboratory data (Plate Readers, Liquid Handlers, etc.)"
+authors = ["James Bullis <jamesbullis@gmail.com>"]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[dependencies]
+python = ">=3.9,<3.14"
+rdkit = ">=2022.9.1"
+pandas = ">=2.0.0"
+numpy = ">=1.24.0"
+scipy = ">=1.10.0"
+matplotlib = ">=3.7.0"
+
+[pypi-dependencies]
+lab_data_simulator = { path = ".", editable = true }
+
+[feature.dev.dependencies]
+pytest = ">=8.0.0"
+pytest-cov = ">=4.1.0"
+black = ">=24.0.0"
+flake8 = ">=7.0.0"
+ipykernel = ">=6.0.0"
+
+[environments]
+default = { features = ["dev"], solve-group = "default" }
+
+[tasks]
+test = "pytest tests/"
+demo = "python examples/demo_simulation.py"
+format = "black src/ tests/"
+lint = "flake8 src/ tests/"
