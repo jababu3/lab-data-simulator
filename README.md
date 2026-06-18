@@ -24,7 +24,7 @@ All simulators produce realistic noise, failure modes, and instrument-specific f
 
 ## Installation
 
-Requires Python ≥ 3.9. Uses [Poetry](https://python-poetry.org/) for dependency management.
+Requires Python ≥ 3.9. Uses [Pixi](https://pixi.sh/) for dependency management.
 
 ```bash
 git clone https://github.com/jababu3/lab-data-simulator.git
@@ -32,10 +32,10 @@ cd lab-data-simulator
 ./setup_env.sh
 ```
 
-Or install with Poetry directly:
+Or install with Pixi directly:
 
 ```bash
-poetry install
+pixi install
 ```
 
 ## Quick Start
@@ -43,7 +43,7 @@ poetry install
 Run the full demo to generate example outputs for all instruments:
 
 ```bash
-poetry run python examples/demo_simulation.py
+pixi run demo
 ```
 
 This creates an `output/` directory with:
@@ -161,8 +161,8 @@ lab-data-simulator/
 ## Running Tests
 
 ```bash
-poetry run pytest
-poetry run pytest --cov=lab_data_simulator  # with coverage
+pixi run test
+pixi run test -- --cov=lab_data_simulator  # with coverage
 ```
 
 ## Who This Is For
