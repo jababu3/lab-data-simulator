@@ -35,3 +35,6 @@ data/
 CLAUDE.md
 GEMINI.md
 
+# pixi environments
+.pixi/*
+!.pixi/config.toml

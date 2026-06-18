@@ -11,15 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v5
+    - uses: prefix-dev/setup-pixi@v0.8.1
       with:
-        python-version: "3.10"
-    - name: Install Poetry
-      run: curl -sSL https://install.python-poetry.org | python3 -
-    - name: Install dependencies
-      run: poetry install
+        pixi-version: v0.39.0
+        environments: default
     - name: Lint with flake8
-      run: poetry run flake8 src/ --max-line-length=88 --extend-ignore=E203,E501
+      run: pixi run lint
     - name: Test with pytest
-      run: poetry run pytest
+      run: pixi run test

@@ -31,4 +31,4 @@ default = { features = ["dev"], solve-group = "default" }
 test = "pytest tests/"
 demo = "python examples/demo_simulation.py"
 format = "black src/ tests/"
-lint = "flake8 src/ tests/"
+lint = "flake8 src/ --max-line-length=88 --extend-ignore=E203,E501"

@@ -24,3 +24,13 @@ packages = ["src/lab_data_simulator"]
 
 [tool.pytest.ini_options]
 pythonpath = "src"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "black>=24.0.0",
+    "flake8>=7.0.0",
+    "ipykernel>=6.0.0",
+]
+
