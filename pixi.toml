@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A library for simulating laboratory data (Plate Readers, Liquid Handlers, etc.)"
 authors = ["James Bullis <jamesbullis@gmail.com>"]
 channels = ["conda-forge"]
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
 python = ">=3.9,<3.14"
